@@ -1,0 +1,197 @@
+// Productivity OS - Prisma schema
+// Using SQLite for zero-setup local persistence. SQLite has no native enum
+// support in Prisma, so status/priority/etc. are plain strings validated
+// at the DTO layer (see src/common/enums.ts) — swapping the datasource to
+// Postgres/Mongo later only means updating `provider` + re-adding enums.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories      Category[]
+  tasks           DailyTask[]
+  dsaProblems     DSAProblem[]
+  jobApplications JobApplication[]
+  learningItems   LearningItem[]
+  monthlyGoals    MonthlyGoal[]
+  dailySummaries  DailySummary[]
+  notifications   Notification[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String   @default("#6366f1")
+  icon      String   @default("circle")
+  bucket    String   @default("OTHER") // DSA | JOB | LEARNING | REVISION | PROJECT | EXERCISE | OTHER
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  tasks DailyTask[]
+
+  @@unique([userId, name])
+}
+
+model DailyTask {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category  Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  title          String
+  date           DateTime // stored at local midnight, represents the calendar day
+  startTime      String   // "HH:mm"
+  endTime        String   // "HH:mm"
+  plannedMinutes Int
+  priority       String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  status         String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  notes          String?
+
+  actualMinutes   Int       @default(0)
+  isTimerRunning  Boolean   @default(false)
+  timerStartedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  timerSessions TimerSession[]
+
+  @@index([userId, date])
+}
+
+model TimerSession {
+  id              String    @id @default(cuid())
+  taskId          String
+  task            DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationMinutes Int?
+
+  @@index([taskId])
+}
+
+model DSAProblem {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic             String
+  problem           String
+  difficulty        String   // EASY | MEDIUM | HARD
+  platform          String?
+  date              DateTime
+  timeSpentMinutes  Int      @default(0)
+  status            String   @default("NOT_STARTED") // NOT_STARTED | SOLVED | NEEDS_REVISION | RE_SOLVED
+  revisionRequired  Boolean  @default(false)
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+model JobApplication {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        String
+  role           String
+  dateApplied    DateTime
+  location       String?
+  jobUrl         String?
+  experience     String?
+  expectedCtc    String?
+  status         String    @default("APPLIED") // APPLIED|SCREENING|HR|TECHNICAL_ROUND|FINAL_ROUND|OFFER|REJECTED|GHOSTED
+  followUpDate   DateTime?
+  interviewDate  DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, dateApplied])
+}
+
+model LearningItem {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill           String
+  topic           String?
+  plannedHours    Float     @default(0)
+  completedHours  Float     @default(0)
+  startDate       DateTime?
+  targetDate      DateTime?
+  status          String    @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED | PAUSED
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model MonthlyGoal {
+  id                        String   @id @default(cuid())
+  userId                    String
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month                     Int      // 1-12
+  year                      Int
+  dsaTarget                 Int      @default(50)
+  jobApplicationsTarget     Int      @default(100)
+  learningHoursTarget       Float    @default(60)
+  revisionHoursTarget       Float    @default(20)
+  interviewPrepHoursTarget  Float    @default(20)
+  projectHoursTarget        Float    @default(20)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@unique([userId, month, year])
+}
+
+model DailySummary {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime
+  plannedMinutes    Int      @default(0)
+  completedMinutes  Int      @default(0)
+  completionPercent Float    @default(0)
+  dsaMinutes        Int      @default(0)
+  jobMinutes        Int      @default(0)
+  learningMinutes   Int      @default(0)
+  revisionMinutes   Int      @default(0)
+  projectMinutes    Int      @default(0)
+  exerciseMinutes   Int      @default(0)
+  otherMinutes      Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String   // TASK_REMINDER | FOLLOWUP_DUE | GOAL_ALERT | GENERAL
+  title         String
+  message       String
+  isRead        Boolean  @default(false)
+  relatedTaskId String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, isRead])
+}

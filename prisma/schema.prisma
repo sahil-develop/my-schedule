@@ -1,15 +1,16 @@
 // Productivity OS - Prisma schema
-// Using SQLite for zero-setup local persistence. SQLite has no native enum
-// support in Prisma, so status/priority/etc. are plain strings validated
-// at the DTO layer (see src/common/enums.ts) — swapping the datasource to
-// Postgres/Mongo later only means updating `provider` + re-adding enums.
+// Runs on hosted Postgres (Vercel Postgres / Neon) so it works on Vercel's
+// serverless filesystem — SQLite has no persistent disk to live on there.
+// status/priority/etc. stay plain strings (not native enums) purely for
+// consistency with how this schema started out on SQLite, which has no
+// enum support; nothing here depends on that anymore.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

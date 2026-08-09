@@ -1,6 +1,6 @@
 # Sahil Productivity OS — Next.js (unified)
 
-Single Next.js 16 App Router app: frontend, API routes, and database all in one project. This replaces the earlier two-server setup (`backend/` NestJS + `frontend/` Vite) with one `next dev` process.
+Single Next.js 16 App Router app: frontend, API routes, and database all in one project. This replaces the earlier two-server setup (`backend/` NestJS + `frontend/` Vite) with one `next dev` p rocess.    
 
 ## Stack
 

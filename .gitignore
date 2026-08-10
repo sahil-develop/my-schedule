@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# agent-generated, re-created by `next dev` — not tracked
+/AGENTS.md
+/CLAUDE.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

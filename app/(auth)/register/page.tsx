@@ -38,7 +38,7 @@ export default function RegisterPage() {
     try {
       await registerUser(values.name, values.email, values.password);
       toast.success('Welcome! Your default 8-hour schedule template is ready.');
-      router.push('/');
+      router.push('/dashboard');
       router.refresh();
     } catch (err) {
       toast.error(errorMessage(err));

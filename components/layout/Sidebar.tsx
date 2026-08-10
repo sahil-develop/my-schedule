@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/schedule', label: 'Schedule', icon: CalendarClock },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/dsa', label: 'DSA', icon: BrainCircuit },

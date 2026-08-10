@@ -50,7 +50,14 @@ export async function getCurrentUser() {
   if (!payload) return null;
 
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-  if (!user) return null;
+  if (!user) {
+    // Signature-valid token for a user that no longer exists (e.g. deleted
+    // account, or DB reset during dev) — clear it, otherwise proxy.ts keeps
+    // treating the request as authed and bounces /login <-> the protected
+    // page forever since it never checks the DB, only the signature.
+    cookieStore.delete(AUTH_COOKIE_NAME);
+    return null;
+  }
 
   const { password: _password, ...safeUser } = user;
   return safeUser;

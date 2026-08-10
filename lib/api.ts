@@ -16,9 +16,10 @@ api.interceptors.response.use(
   (err) => {
     if (axios.isAxiosError(err) && err.response?.status === 401 && typeof window !== 'undefined') {
       const url = err.config?.url ?? '';
-      const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
-      const onAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
-      if (!isAuthEndpoint && !onAuthPage) {
+      const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/me');
+      const publicPages = ['/login', '/register', '/', '/pricing', '/about'];
+      const onPublicPage = publicPages.includes(window.location.pathname);
+      if (!isAuthEndpoint && !onPublicPage) {
         window.location.href = '/login';
       }
     }

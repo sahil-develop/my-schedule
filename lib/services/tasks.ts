@@ -132,6 +132,14 @@ export async function updateTask(userId: string, id: string, dto: UpdateTaskInpu
     await assertNoOverlap(userId, date, startTime, endTime, id);
   }
 
+  const plannedMinutes = dto.startTime || dto.endTime ? timeToMinutes(endTime) - timeToMinutes(startTime) : existing.plannedMinutes;
+  // Dashboard/analytics count actualMinutes, not status — a task marked
+  // COMPLETED without ever using the timer would otherwise contribute zero
+  // to completed-hours stats. Give it full credit, but never reduce time
+  // that was actually tracked.
+  const completingNow = dto.status === 'COMPLETED' && existing.status !== 'COMPLETED';
+  const actualMinutes = completingNow ? Math.max(existing.actualMinutes, plannedMinutes) : existing.actualMinutes;
+
   return prisma.dailyTask.update({
     where: { id },
     data: {
@@ -139,10 +147,11 @@ export async function updateTask(userId: string, id: string, dto: UpdateTaskInpu
       ...(dto.date ? { date } : {}),
       ...(dto.startTime ? { startTime } : {}),
       ...(dto.endTime ? { endTime } : {}),
-      ...(dto.startTime || dto.endTime ? { plannedMinutes: timeToMinutes(endTime) - timeToMinutes(startTime) } : {}),
+      ...(dto.startTime || dto.endTime ? { plannedMinutes } : {}),
       ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
       ...(dto.priority ? { priority: dto.priority } : {}),
       ...(dto.status ? { status: dto.status } : {}),
+      ...(completingNow ? { actualMinutes } : {}),
       ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
     },
     include: { category: true },
